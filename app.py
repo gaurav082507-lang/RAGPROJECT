@@ -353,8 +353,6 @@ if "messages" not in st.session_state:
 # HANDLE PDF UPLOAD
 # =========================================================
 if uploaded_file is not None:
-    if st.session_state.get("uploaded_filename") != uploaded_file.name:
-if uploaded_file is not None:
     # Hash the file content (not just the name) so re-uploading the exact
     # same PDF reuses the existing vector store instead of re-embedding
     # everything from scratch.

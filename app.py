@@ -283,8 +283,17 @@ def build_chain(pdf_path, session_id):
 # =========================================================
 @st.cache_resource(show_spinner=False)
 def build_chain_from_url(url, session_id):
-    data = WebBaseLoader(url)
+    data = WebBaseLoader(
+        web_path=url,
+        header_template={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            )
+        },
+    )
     docs = data.load()
+    total_chars = sum(len(d.page_content) for d in docs)
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1500,
         chunk_overlap=200
@@ -339,7 +348,7 @@ def build_chain_from_url(url, session_id):
     parser = StrOutputParser()
 
     chains = retriever | RunnableLambda(lambda x: get_context(x, query=x)) | template | LLM | parser
-    return retriever, template, LLM, parser, get_context
+    return retriever, template, LLM, parser, get_context, total_chars
 
 
 # =========================================================

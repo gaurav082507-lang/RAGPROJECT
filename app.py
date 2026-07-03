@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 import streamlit as st
 
@@ -12,6 +13,22 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda
+
+
+def render_latex_delimiters(text: str) -> str:
+    """
+    Streamlit's markdown renderer only auto-renders LaTeX wrapped in
+    $...$ (inline) or $$...$$ (block). PDFs/LLMs often emit LaTeX using
+    \\( ... \\) and \\[ ... \\] instead, which Streamlit shows as raw text.
+    This converts those delimiters so equations actually render.
+    """
+    if not text:
+        return text
+    # Block math: \[ ... \]  ->  $$ ... $$
+    text = re.sub(r"\\\[(.*?)\\\]", lambda m: f"$${m.group(1)}$$", text, flags=re.DOTALL)
+    # Inline math: \( ... \)  ->  $ ... $
+    text = re.sub(r"\\\((.*?)\\\)", lambda m: f"${m.group(1)}$", text, flags=re.DOTALL)
+    return text
 
 
 # =========================================================
@@ -193,7 +210,7 @@ with st.sidebar:
 # BUILD RAG CHAIN (uses uploaded PDF) — CORE LOGIC UNCHANGED
 # =========================================================
 @st.cache_resource(show_spinner=False)
-def build_chain(pdf_path):
+def build_chain(pdf_path, session_id):
     data = PyPDFLoader(pdf_path)
     docs = data.load()
     splitter = RecursiveCharacterTextSplitter(
@@ -202,10 +219,14 @@ def build_chain(pdf_path):
     )
     docs_chunk = splitter.split_documents(documents=docs)
     embedding_model = MistralAIEmbeddings(model='mistral-embed-2312')
+    # Each upload gets its own isolated, temporary Chroma store so
+    # documents from different sessions/uploads never mix, and nothing
+    # persists on disk after the session ends.
+    persist_dir = os.path.join(tempfile.gettempdir(), "rag_chroma_db", session_id)
     vectorstore = Chroma.from_documents(
         documents=docs_chunk,
         embedding=embedding_model,
-        persist_directory='RagProjectDataBase'
+        persist_directory=persist_dir
     )
     retriever = vectorstore.as_retriever(
         search_type='mmr',
@@ -272,7 +293,14 @@ if uploaded_file is not None:
             with open(temp_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
 
-            retriever, template, LLM, parser, get_context = build_chain(temp_path)
+            # Unique ID per upload (session + filename) keeps each PDF's
+            # vector store isolated from other users' and other uploads' data.
+            if "session_id" not in st.session_state:
+                import uuid
+                st.session_state.session_id = str(uuid.uuid4())
+            db_session_id = f"{st.session_state.session_id}_{uploaded_file.name}"
+
+            retriever, template, LLM, parser, get_context = build_chain(temp_path, db_session_id)
 
             st.session_state.retriever = retriever
             st.session_state.template = template
@@ -291,7 +319,7 @@ if uploaded_file is not None:
 # =========================================================
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+        st.markdown(render_latex_delimiters(msg["content"]))
 
 if "chain" not in st.session_state:
     st.info("👋 Upload a PDF from the sidebar to begin chatting with your document.")
@@ -313,7 +341,7 @@ else:
                 chains = retriever | RunnableLambda(lambda x: get_context(x, query=user_query)) | template | LLM | parser
                 response = chains.invoke(user_query)
 
-                st.markdown(response)
+                st.markdown(render_latex_delimiters(response))
 
         st.session_state.messages.append({"role": "assistant", "content": response})
 
@@ -323,7 +351,7 @@ else:
 # =========================================================
 st.markdown("""
 <div style="text-align:center; margin-top: 3rem; padding: 1rem; color:#6b7280; font-size:0.82rem;">
-    Built by <b style="color:#9ca3af;">Gaurav Gupta</b> ·
+    Built with ❤️ by <b style="color:#9ca3af;">Gaurav Gupta</b> ·
     <a href="https://www.linkedin.com/in/gaurav-gupta-79754a377" target="_blank" style="color:#0a66c2; text-decoration:none;">LinkedIn</a>
 </div>
 """, unsafe_allow_html=True)

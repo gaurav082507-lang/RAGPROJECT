@@ -6,4 +6,3 @@ langchain-community
 langchain-text-splitters
 chromadb
 pypdf
-beautifulsoup4

@@ -323,7 +323,7 @@ else:
 # =========================================================
 st.markdown("""
 <div style="text-align:center; margin-top: 3rem; padding: 1rem; color:#6b7280; font-size:0.82rem;">
-    Built with ❤️ by <b style="color:#9ca3af;">Gaurav Gupta</b> ·
+    Built by <b style="color:#9ca3af;">Gaurav Gupta</b> ·
     <a href="https://www.linkedin.com/in/gaurav-gupta-79754a377" target="_blank" style="color:#0a66c2; text-decoration:none;">LinkedIn</a>
 </div>
 """, unsafe_allow_html=True)

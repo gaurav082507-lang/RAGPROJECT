@@ -218,7 +218,7 @@ def build_chain(pdf_path, session_id):
         chunk_overlap=200
     )
     docs_chunk = splitter.split_documents(documents=docs)
-    embedding_model = GoogleGenerativeAIEmbeddings(model='models/embedding-001')
+    embedding_model = GoogleGenerativeAIEmbeddings(model='models/text-embedding-004')
     # Each upload gets its own isolated, temporary Chroma store so
     # documents from different sessions/uploads never mix, and nothing
     # persists on disk after the session ends.

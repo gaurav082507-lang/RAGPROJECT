@@ -236,7 +236,7 @@ def build_chain(pdf_path, session_id):
             'lambda_mult': 0.5
         }
     )
-    LLM = ChatGoogleGenerativeAI(model='gemini-2.5-flash')
+    LLM = ChatGoogleGenerativeAI(model='gemini-3.5-flash-lite')
     template = ChatPromptTemplate.from_messages([
         (
             'system', """You are a helpful assistant that answers questions using ONLY the information provided in the context below. Follow these rules strictly:

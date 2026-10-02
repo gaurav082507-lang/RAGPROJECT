@@ -6,7 +6,7 @@ import streamlit as st
 from dotenv import load_dotenv
 load_dotenv()
 
-from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -164,7 +164,7 @@ st.markdown("""
 st.markdown("""
 <div class="rag-header">
     <h1>📄 RAG Chat — Document Q&amp;A System</h1>
-    <p>Upload a PDF and ask questions grounded strictly in its content, powered by Mistral AI &amp; LangChain.</p>
+    <p>Upload a PDF and ask questions grounded strictly in its content, powered by Google Gemini &amp; LangChain.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -189,7 +189,7 @@ with st.sidebar:
         <p>1. Upload a PDF document<br>
         2. The system chunks &amp; embeds it<br>
         3. Retrieval uses MMR search (k=5)<br>
-        4. Mistral LLM answers strictly from context</p>
+        4. Gemini LLM answers strictly from context</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -218,7 +218,7 @@ def build_chain(pdf_path, session_id):
         chunk_overlap=200
     )
     docs_chunk = splitter.split_documents(documents=docs)
-    embedding_model = MistralAIEmbeddings(model='mistral-embed-2312')
+    embedding_model = GoogleGenerativeAIEmbeddings(model='models/embedding-001')
     # Each upload gets its own isolated, temporary Chroma store so
     # documents from different sessions/uploads never mix, and nothing
     # persists on disk after the session ends.
@@ -236,7 +236,7 @@ def build_chain(pdf_path, session_id):
             'lambda_mult': 0.5
         }
     )
-    LLM = ChatMistralAI(model='mistral-small-2603')
+    LLM = ChatGoogleGenerativeAI(model='gemini-2.5-flash')
     template = ChatPromptTemplate.from_messages([
         (
             'system', """You are a helpful assistant that answers questions using ONLY the information provided in the context below. Follow these rules strictly:

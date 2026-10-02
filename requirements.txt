@@ -1,6 +1,6 @@
 streamlit
 python-dotenv
-langchain-mistralai
+langchain-google-genai
 langchain-core
 langchain-community
 langchain-text-splitters
